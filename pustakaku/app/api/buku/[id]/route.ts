@@ -1,4 +1,5 @@
-import { findBook } from "../../../../lib/db";
+import { bookSelect, toApiBook } from "../../../../lib/books";
+import { prisma } from "../../../../lib/prisma";
 
 export async function GET(
   _request: Request,
@@ -7,14 +8,17 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const book = findBook(id);
+    const book = await prisma.book.findUnique({
+      where: { id },
+      select: bookSelect,
+    });
     if (!book) {
       return Response.json(
         { error: "Buku tidak ditemukan." },
         { status: 404 },
       );
     }
-    return Response.json(book);
+    return Response.json(toApiBook(book));
   } catch (error) {
     console.error(`GET /api/buku/${id} gagal memuat buku.`, error);
     return Response.json(

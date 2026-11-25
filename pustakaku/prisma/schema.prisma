@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique(map: "categories_name_key")
+  createdAt DateTime @default(now()) @map("created_at")
+  books     Book[]
+
+  @@map("categories")
+}
+
+model Book {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  categoryId  Int      @map("category_id")
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  year        Int
+  stock       Int      @default(0)
+  description String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([title], map: "books_title_idx")
+  @@index([author], map: "books_author_idx")
+  @@index([categoryId], map: "books_category_id_idx")
+  @@map("books")
+}

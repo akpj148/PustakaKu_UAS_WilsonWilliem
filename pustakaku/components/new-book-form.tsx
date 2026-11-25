@@ -16,19 +16,19 @@ type FormValues = {
 
 type FieldErrors = Partial<Record<keyof FormValues, string>>;
 
-const currentYear = new Date().getFullYear();
+const initialValues: FormValues = {
+  title: "",
+  author: "",
+  category: "",
+  year: "",
+  stock: "1",
+  description: "",
+};
 
 export default function NewBookForm() {
   const router = useRouter();
   const { addBook } = useBookStore();
-  const [values, setValues] = useState<FormValues>({
-    title: "",
-    author: "",
-    category: "",
-    year: "",
-    stock: "1",
-    description: "",
-  });
+  const [values, setValues] = useState<FormValues>(initialValues);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -48,8 +48,8 @@ export default function NewBookForm() {
     const year = Number(values.year);
     if (!values.year) {
       nextErrors.year = "Tahun terbit wajib diisi.";
-    } else if (!Number.isInteger(year) || year < 1450 || year > currentYear) {
-      nextErrors.year = `Masukkan tahun antara 1450 dan ${currentYear}.`;
+    } else if (!Number.isInteger(year)) {
+      nextErrors.year = "Tahun terbit harus berupa bilangan bulat.";
     }
 
     const stock = Number(values.stock);
@@ -63,6 +63,8 @@ export default function NewBookForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitting) return;
+
     const validationErrors = validate();
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
@@ -83,6 +85,10 @@ export default function NewBookForm() {
         stock: Number(values.stock),
         description: values.description.trim(),
       });
+      setValues(initialValues);
+      setErrors({});
+      setSubmitError("");
+      setSubmitting(false);
       router.push(`/buku/${book.id}`);
     } catch (error) {
       console.error("Buku baru tidak dapat ditambahkan.", error);
@@ -194,9 +200,7 @@ export default function NewBookForm() {
                 name="year"
                 type="number"
                 inputMode="numeric"
-                min="1450"
-                max={currentYear}
-                placeholder={String(currentYear)}
+                placeholder="Contoh: 2025"
                 value={values.year}
                 onChange={(event) => updateField("year", event.target.value)}
                 aria-invalid={Boolean(errors.year)}
@@ -208,7 +212,7 @@ export default function NewBookForm() {
             {errors.year ? (
               <p className="field-error-text" id="year-error">{errors.year}</p>
             ) : (
-              <p className="field-hint" id="year-hint">Masukkan tahun penerbitan buku.</p>
+              <p className="field-hint" id="year-hint">Tahun terbit berupa bilangan bulat tanpa batas minimum atau maksimum.</p>
             )}
           </div>
 

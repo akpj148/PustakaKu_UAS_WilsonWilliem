@@ -1,7 +1,6 @@
 PUSTAKAKU
 
 LOKASI UTAMA
-
 Design
 Lokasi: ../docs/design.md
 Isi: Brief visual dan spesifikasi halaman aplikasi.
@@ -41,19 +40,20 @@ Isi: GET koleksi dan POST buku baru.
 Lokasi: app/api/buku/[id]/route.ts
 Isi: GET detail buku berdasarkan ID.
 
-Database
-Skema: database/schema.sql
-Inisialisasi dan query: lib/db.ts
+DATABASE
+Skema Prisma: prisma/schema.prisma
+Migrasi: prisma/migrations/
+Pengaturan Prisma: prisma.config.ts
+Seed data contoh: prisma/seed.ts
+Prisma Client: lib/prisma.ts
+Query dan serialisasi buku: lib/books.ts
 File SQLite: data/pustakaku.db
-Database dibuat otomatis oleh API saat pertama kali digunakan.
+URL default database: file:./data/pustakaku.db; dapat diganti melalui DATABASE_URL.
+Database dijalankan melalui migrasi Prisma; buku contoh hanya ditambahkan jika koleksi kosong.
 
-RINGKASAN (10 KATA)
-
+RINGKASAN
 PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
 MENJALANKAN APLIKASI
-
 Jalankan perintah: npm run dev
-Persyaratan: Node.js 22.5 atau lebih baru.
-
-Buku contoh dimasukkan saat database pertama kali dibuat.
+Persyaratan Node.js: 20.19+, 22.12+, atau 24+.

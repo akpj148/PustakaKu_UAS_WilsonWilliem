@@ -1,4 +1,15 @@
-import { insertBook, listBooks, type NewBook } from "../../../lib/db";
+import type { Prisma } from "../../../generated/prisma/client";
+import { bookSelect, toApiBook } from "../../../lib/books";
+import { prisma } from "../../../lib/prisma";
+
+type NewBook = {
+  title: string;
+  author: string;
+  category: string;
+  year: number;
+  stock: number;
+  description: string;
+};
 
 type FieldErrors = Record<string, string>;
 
@@ -24,7 +35,6 @@ function validateBook(value: unknown): {
         : null;
   const year = input.year;
   const stock = input.stock;
-  const currentYear = new Date().getFullYear();
 
   if (!title) errors.title = "Judul buku wajib diisi.";
   else if (title.length > 200) errors.title = "Judul maksimal 200 karakter.";
@@ -39,8 +49,6 @@ function validateBook(value: unknown): {
 
   if (typeof year !== "number" || !Number.isInteger(year)) {
     errors.year = "Tahun terbit harus berupa bilangan bulat.";
-  } else if (year < 1450 || year > currentYear) {
-    errors.year = `Tahun terbit harus antara 1450 dan ${currentYear}.`;
   }
 
   if (typeof stock !== "number" || !Number.isSafeInteger(stock) || stock < 0) {
@@ -70,7 +78,23 @@ function validateBook(value: unknown): {
 export async function GET(request: Request) {
   try {
     const search = new URL(request.url).searchParams.get("search") ?? "";
-    return Response.json(listBooks(search.slice(0, 100)));
+    const term = search.trim().slice(0, 100);
+    const where: Prisma.BookWhereInput = term
+      ? {
+          OR: [
+            { title: { contains: term } },
+            { author: { contains: term } },
+            { category: { is: { name: { contains: term } } } },
+          ],
+        }
+      : {};
+    const books = await prisma.book.findMany({
+      where,
+      select: bookSelect,
+      orderBy: [{ createdAt: "desc" }, { title: "asc" }],
+    });
+
+    return Response.json(books.map(toApiBook));
   } catch (error) {
     console.error("GET /api/buku gagal memuat koleksi.", error);
     return Response.json(
@@ -103,8 +127,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const book = insertBook(validation.book);
-    return Response.json(book, { status: 201 });
+    const book = await prisma.book.create({
+      data: {
+        ...validation.book,
+        category: {
+          connectOrCreate: {
+            where: { name: validation.book.category },
+            create: { name: validation.book.category },
+          },
+        },
+      },
+      select: bookSelect,
+    });
+    return Response.json(toApiBook(book), { status: 201 });
   } catch (error) {
     console.error("POST /api/buku gagal menyimpan buku.", error);
     return Response.json(
