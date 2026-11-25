@@ -1,15 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { useBookStore } from "./book-store";
+import { useEffect, useState } from "react";
+import { isBook, type Book } from "./book-store";
 import BookCover from "./book-cover";
 import StockBadge from "./stock-badge";
 
-export default function BookDetail({ id }: { id: string }) {
-  const { books, ready } = useBookStore();
-  const book = books.find((item) => item.id === id);
+type DetailResult = {
+  id: string;
+  book: Book | null;
+  error: string | null;
+};
 
-  if (!ready) {
+export default function BookDetail({ id }: { id: string }) {
+  const [result, setResult] = useState<DetailResult | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBook() {
+      try {
+        const response = await fetch(`/api/buku/${encodeURIComponent(id)}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (response.status === 404) {
+          setResult({ id, book: null, error: null });
+          return;
+        }
+
+        const payload: unknown = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            typeof payload === "object" &&
+              payload !== null &&
+              "error" in payload &&
+              typeof payload.error === "string"
+              ? payload.error
+              : "Detail buku gagal dimuat.",
+          );
+        }
+        if (!isBook(payload)) {
+          throw new Error("Format detail buku dari server tidak valid.");
+        }
+
+        setResult({ id, book: payload, error: null });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error(`Detail buku ${id} gagal dimuat dari API.`, error);
+        setResult({
+          id,
+          book: null,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Detail buku gagal dimuat.",
+        });
+      }
+    }
+
+    void loadBook();
+    return () => controller.abort();
+  }, [id]);
+
+  const currentResult = result?.id === id ? result : null;
+
+  if (!currentResult) {
     return (
       <div className="detail-loading" role="status">
         <span className="loading-spinner" />
@@ -17,6 +73,22 @@ export default function BookDetail({ id }: { id: string }) {
       </div>
     );
   }
+
+  if (currentResult.error) {
+    return (
+      <div className="not-found-card" role="alert">
+        <span className="not-found-mark" aria-hidden="true">!</span>
+        <div className="section-kicker"><span /> GAGAL MEMUAT BUKU</div>
+        <h1>Detail buku belum dapat ditampilkan.</h1>
+        <p>{currentResult.error}</p>
+        <Link className="button button-primary" href="/buku">
+          Kembali ke Daftar Buku
+        </Link>
+      </div>
+    );
+  }
+
+  const book = currentResult.book;
 
   if (!book) {
     return (

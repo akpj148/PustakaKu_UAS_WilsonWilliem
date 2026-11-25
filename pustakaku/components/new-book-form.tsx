@@ -61,7 +61,7 @@ export default function NewBookForm() {
     return nextErrors;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validationErrors = validate();
     setErrors(validationErrors);
@@ -75,7 +75,7 @@ export default function NewBookForm() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      const book = addBook({
+      const book = await addBook({
         title: values.title.trim(),
         author: values.author.trim(),
         category: values.category.trim(),
@@ -86,7 +86,9 @@ export default function NewBookForm() {
       router.push(`/buku/${book.id}`);
     } catch (error) {
       console.error("Buku baru tidak dapat ditambahkan.", error);
-      setSubmitError("Buku belum dapat disimpan. Coba lagi.");
+      setSubmitError(
+        error instanceof Error ? error.message : "Buku belum dapat disimpan.",
+      );
       setSubmitting(false);
     }
   }
@@ -261,7 +263,7 @@ export default function NewBookForm() {
       </form>
       <p className="form-footnote">
         <span aria-hidden="true">♧</span>
-        Informasi buku tersimpan di browser yang kamu gunakan.
+        Informasi buku disimpan di database SQLite aplikasi.
       </p>
     </div>
   );

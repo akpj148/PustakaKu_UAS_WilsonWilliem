@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { BookStoreProvider, useBookStore } from "./book-store";
+import { BookStoreProvider } from "./book-store";
 
 const navigation = [
   { href: "/", label: "Beranda", icon: "home" },
@@ -77,10 +77,8 @@ function ActiveNavigation({ onNavigate }: { onNavigate: () => void }) {
 
 function ShellContent({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [noticeDismissed, setNoticeDismissed] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
-  const { storageError } = useBookStore();
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -188,18 +186,6 @@ function ShellContent({ children }: { children: ReactNode }) {
             Koleksi buku
           </Link>
         </header>
-        {storageError && !noticeDismissed && (
-          <div className="storage-notice" role="status">
-            <span>{storageError}</span>
-            <button
-              type="button"
-              aria-label="Tutup pemberitahuan"
-              onClick={() => setNoticeDismissed(true)}
-            >
-              Tutup
-            </button>
-          </div>
-        )}
         <main className="page-content">{children}</main>
       </div>
     </div>

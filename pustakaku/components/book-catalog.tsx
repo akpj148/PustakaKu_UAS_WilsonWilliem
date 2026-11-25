@@ -6,7 +6,7 @@ import { useBookStore } from "./book-store";
 import StockBadge from "./stock-badge";
 
 export default function BookCatalog() {
-  const { books, ready } = useBookStore();
+  const { books, ready, dataError, refreshBooks } = useBookStore();
   const [query, setQuery] = useState("");
 
   const filteredBooks = useMemo(() => {
@@ -79,6 +79,19 @@ export default function BookCatalog() {
             <span className="loading-spinner" />
             Memuat koleksi buku…
           </div>
+        ) : dataError ? (
+          <div className="empty-state">
+            <div className="empty-search-icon" aria-hidden="true">!</div>
+            <h3>Koleksi belum dapat dimuat</h3>
+            <p>{dataError}</p>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={refreshBooks}
+            >
+              Coba lagi
+            </button>
+          </div>
         ) : books.length === 0 ? (
           <div className="empty-state">
             <div className="empty-illustration" aria-hidden="true">
@@ -146,7 +159,7 @@ export default function BookCatalog() {
         {ready && books.length > 0 && (
           <div className="catalog-footnote">
             <span className="demo-dot" />
-            Koleksi contoh dapat kamu ubah dengan menambahkan buku baru.
+            Buku contoh dan buku baru tersimpan di database SQLite.
           </div>
         )}
       </section>

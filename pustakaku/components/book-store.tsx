@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useSyncExternalStore,
   type ReactNode,
@@ -24,78 +25,27 @@ type NewBook = Omit<Book, "id">;
 type BookStoreValue = {
   books: Book[];
   ready: boolean;
-  storageError: string | null;
-  addBook: (book: NewBook) => Book;
+  dataError: string | null;
+  refreshBooks: () => void;
+  addBook: (book: NewBook) => Promise<Book>;
 };
 
 type StoreSnapshot = {
   books: Book[];
   ready: boolean;
-  storageError: string | null;
+  dataError: string | null;
 };
-
-const STORAGE_KEY = "pustakaku.books.v1";
-
-const demoBooks: Book[] = [
-  {
-    id: "1001",
-    title: "Laut yang Menyimpan Cerita",
-    author: "Nara Adiwijaya",
-    category: "Fiksi",
-    year: 2022,
-    stock: 4,
-    description:
-      "Di sebuah kota pesisir, seorang penjaga mercusuar menemukan catatan-catatan lama yang mengubah cara pandangnya tentang rumah, kehilangan, dan keberanian untuk memulai lagi.",
-  },
-  {
-    id: "1002",
-    title: "Kebun Kecil di Ujung Kota",
-    author: "Mira Sekar",
-    category: "Pengembangan Diri",
-    year: 2021,
-    stock: 2,
-    description:
-      "Kisah dan refleksi sederhana tentang membangun kebiasaan baik, merawat hubungan, dan menemukan ruang untuk bertumbuh di tengah kesibukan sehari-hari.",
-  },
-  {
-    id: "1003",
-    title: "Atlas Bintang Nusantara",
-    author: "Raka Pradipta",
-    category: "Sains",
-    year: 2024,
-    stock: 0,
-    description:
-      "Pengantar populer untuk mengenal langit malam, rasi bintang, dan cara masyarakat kepulauan memaknai alam semesta dari generasi ke generasi.",
-  },
-  {
-    id: "1004",
-    title: "Jejak di Kota Lama",
-    author: "Dian Puspita",
-    category: "Sejarah",
-    year: 2019,
-    stock: 6,
-    description:
-      "Catatan perjalanan menyusuri bangunan, arsip, dan kisah warga yang membentuk wajah sebuah kota dari masa ke masa.",
-  },
-  {
-    id: "1005",
-    title: "Ruang untuk Pulang",
-    author: "Bima Aksara",
-    category: "Fiksi",
-    year: 2023,
-    stock: 1,
-    description:
-      "Dua sahabat lama bertemu kembali dan belajar bahwa pulang bukan selalu tentang tempat, tetapi juga tentang orang-orang yang bersedia mendengarkan.",
-  },
-];
 
 const serverSnapshot: StoreSnapshot = {
-  books: demoBooks,
+  books: [],
   ready: false,
-  storageError: null,
+  dataError: null,
 };
 
-function isBook(value: unknown): value is Book {
+let snapshot = serverSnapshot;
+const listeners = new Set<() => void>();
+
+export function isBook(value: unknown): value is Book {
   if (typeof value !== "object" || value === null) return false;
   const book = value as Record<string, unknown>;
 
@@ -114,33 +64,17 @@ function isBookList(value: unknown): value is Book[] {
   return Array.isArray(value) && value.every(isBook);
 }
 
-function readInitialSnapshot(): StoreSnapshot {
-  if (typeof window === "undefined") return serverSnapshot;
-
-  try {
-    const savedBooks = window.localStorage.getItem(STORAGE_KEY);
-    if (savedBooks === null) {
-      return { books: demoBooks, ready: true, storageError: null };
-    }
-
-    const parsedBooks: unknown = JSON.parse(savedBooks);
-    if (!isBookList(parsedBooks)) {
-      throw new Error("Format koleksi tersimpan tidak valid.");
-    }
-    return { books: parsedBooks, ready: true, storageError: null };
-  } catch (error) {
-    console.error("Koleksi PustakaKu tidak dapat dibaca dari penyimpanan.", error);
-    return {
-      books: demoBooks,
-      ready: true,
-      storageError:
-        "Koleksi lokal tidak dapat dibaca. Data contoh ditampilkan untuk sementara.",
-    };
+function getErrorMessage(value: unknown, fallback: string) {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "error" in value &&
+    typeof value.error === "string"
+  ) {
+    return value.error;
   }
+  return fallback;
 }
-
-let snapshot = readInitialSnapshot();
-const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
@@ -169,37 +103,79 @@ export function BookStoreProvider({ children }: { children: ReactNode }) {
     getServerSnapshot,
   );
 
-  const addBook = useCallback((newBook: NewBook) => {
-    const book: Book = {
-      ...newBook,
-      id:
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : Date.now().toString(),
-    };
-    const nextBooks = [book, ...snapshot.books];
-    let storageError: string | null = null;
-
+  const loadBooks = useCallback(async (signal?: AbortSignal) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextBooks));
+      const response = await fetch("/api/buku", {
+        cache: "no-store",
+        signal,
+      });
+      const payload: unknown = await response.json();
+
+      if (!response.ok) {
+        throw new Error(getErrorMessage(payload, "Koleksi buku gagal dimuat."));
+      }
+      if (!isBookList(payload)) {
+        throw new Error("Format data koleksi dari server tidak valid.");
+      }
+
+      publish({ books: payload, ready: true, dataError: null });
     } catch (error) {
-      console.error("Koleksi PustakaKu tidak dapat disimpan.", error);
-      storageError =
-        "Perubahan belum tersimpan di perangkat ini. Periksa izin penyimpanan browser.";
+      if (signal?.aborted) return;
+      console.error("Koleksi buku gagal dimuat dari API.", error);
+      publish({
+        books: [],
+        ready: true,
+        dataError:
+          error instanceof Error
+            ? error.message
+            : "Koleksi buku gagal dimuat dari server.",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadBooks(controller.signal);
+    return () => controller.abort();
+  }, [loadBooks]);
+
+  const refreshBooks = useCallback(() => {
+    publish({ ...snapshot, ready: false, dataError: null });
+    void loadBooks();
+  }, [loadBooks]);
+
+  const addBook = useCallback(async (newBook: NewBook) => {
+    const response = await fetch("/api/buku", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newBook),
+    });
+    const payload: unknown = await response.json();
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(payload, "Buku gagal disimpan."));
+    }
+    if (!isBook(payload)) {
+      throw new Error("Server mengembalikan format buku yang tidak valid.");
     }
 
-    publish({ books: nextBooks, ready: true, storageError });
-    return book;
+    publish({
+      books: [payload, ...snapshot.books],
+      ready: true,
+      dataError: null,
+    });
+    return payload;
   }, []);
 
   const value = useMemo(
     () => ({
       books: currentSnapshot.books,
       ready: currentSnapshot.ready,
-      storageError: currentSnapshot.storageError,
+      dataError: currentSnapshot.dataError,
+      refreshBooks,
       addBook,
     }),
-    [currentSnapshot, addBook],
+    [currentSnapshot, refreshBooks, addBook],
   );
 
   return (
