@@ -1,10 +1,9 @@
 # PUSTAKAKU
 
-LOKASI UTAMA
-Design
-Lokasi: ../docs/design.md
-Isi: Brief visual dan spesifikasi halaman aplikasi.
+# RINGKASAN
+PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
+#LOKASI UTAMA
 Components
 Lokasi: components/
 Isi: Shell navigasi, pengambilan data API, tabel, detail, formulir, dan badge stok.
@@ -46,9 +45,6 @@ Query dan serialisasi buku: lib/books.ts
 File SQLite: data/pustakaku.db
 URL default database: file:./data/pustakaku.db; dapat diganti melalui DATABASE_URL.
 Database dijalankan melalui migrasi Prisma; buku contoh hanya ditambahkan jika koleksi kosong.
-
-# RINGKASAN
-PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
 # MENJALANKAN APLIKASI
 Jalankan perintah: npm run dev
