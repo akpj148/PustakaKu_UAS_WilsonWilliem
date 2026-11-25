@@ -56,9 +56,6 @@ Persyaratan Node.js: 20.19+, 22.12+, atau 24+.
 
 # ERD
 # Diagram
-
-mermaid
-erDiagram
   CATEGORIES ||--o{ BOOKS : mengelompokkan
 
   CATEGORIES {
