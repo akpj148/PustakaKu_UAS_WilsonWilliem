@@ -3,7 +3,7 @@
 # RINGKASAN
 PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
-#LOKASI UTAMA
+# LOKASI UTAMA
 Components
 Lokasi: components/
 Isi: Shell navigasi, pengambilan data API, tabel, detail, formulir, dan badge stok.
