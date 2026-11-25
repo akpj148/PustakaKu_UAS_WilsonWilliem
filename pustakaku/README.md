@@ -1,25 +1,41 @@
-# PustakaKu
+PUSTAKAKU
 
-## Lokasi utama
+LOKASI UTAMA
 
-| Bagian | Lokasi | Isi |
-| --- | --- | --- |
-| Design | [`../docs/design.md`](../docs/design.md) | Brief visual dan spesifikasi halaman aplikasi. |
-| Components | [`components/`](components/) | Shell navigasi, penyimpanan buku, tabel, detail, formulir, dan badge stok. |
-| Beranda | [`app/page.tsx`](app/page.tsx) | Landing page dan pintasan ke katalog atau formulir. |
-| Daftar buku | [`app/buku/page.tsx`](app/buku/page.tsx) | Pencarian dan tabel koleksi buku. |
-| Detail buku | [`app/buku/[id]/page.tsx`](app/buku/[id]/page.tsx) | Detail buku berdasarkan ID pada URL. |
-| Buku baru | [`app/buku/baru/page.tsx`](app/buku/baru/page.tsx) | Formulir untuk menambahkan buku. |
-| Layout dan gaya | [`app/layout.tsx`](app/layout.tsx), [`app/globals.css`](app/globals.css) | Metadata, shell aplikasi, dan gaya global responsif. |
+Design
+Lokasi: ../docs/design.md
+Isi: Brief visual dan spesifikasi halaman aplikasi.
 
-## Ringkasan (10 kata)
+Components
+Lokasi: components/
+Isi: Shell navigasi, penyimpanan buku, tabel, detail, formulir, dan badge stok.
+
+Beranda
+Lokasi: app/page.tsx
+Isi: Landing page dan pintasan ke katalog atau formulir.
+
+Daftar buku
+Lokasi: app/buku/page.tsx
+Isi: Pencarian dan tabel koleksi buku.
+
+Detail buku
+Lokasi: app/buku/[id]/page.tsx
+Isi: Detail buku berdasarkan ID pada URL.
+
+Buku baru
+Lokasi: app/buku/baru/page.tsx
+Isi: Formulir untuk menambahkan buku.
+
+Layout dan gaya
+Lokasi: app/layout.tsx, app/globals.css
+Isi: Metadata, shell aplikasi, dan gaya global responsif.
+
+RINGKASAN (10 KATA)
 
 PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
-## Menjalankan aplikasi
+MENJALANKAN APLIKASI
 
-```bash
-npm run dev
-```
+Jalankan perintah: npm run dev
 
 Koleksi contoh dan buku yang ditambahkan disimpan di penyimpanan lokal browser.
