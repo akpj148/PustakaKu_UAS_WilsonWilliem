@@ -1,5 +1,13 @@
 # PUSTAKAKU
 
+## Versions
+prisma               : 7.10.1
+@prisma/client       : 7.10.1
+Operating System     : win32
+Architecture         : x64
+Node.js              : v24.20.0
+TypeScript           : 5.9.3
+
 # RINGKASAN
 PustakaKu mencatat, menelusuri, menampilkan, dan menyimpan koleksi buku secara lokal.
 
